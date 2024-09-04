@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserLoginResponseDTO extends baseResponseDTO{
+public class UserLoginResponseDTO extends BaseResponseDTO {
     private String message;
     private UserDTO userDTO ;
 

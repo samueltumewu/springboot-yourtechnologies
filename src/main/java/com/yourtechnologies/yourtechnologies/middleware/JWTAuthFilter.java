@@ -1,6 +1,7 @@
 package com.yourtechnologies.yourtechnologies.middleware;
 
 import com.yourtechnologies.yourtechnologies.service.jwt.JwtService;
+import com.yourtechnologies.yourtechnologies.service.jwt.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,8 @@ public class JWTAuthFilter extends OncePerRequestFilter {
     JwtService jwtService;
     @Autowired
     UserDetailsService userDetailsService;
+    @Autowired
+    TokenBlacklistService tokenBlacklistService;
 
 
     @Override
@@ -41,15 +44,18 @@ public class JWTAuthFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            final String jwt = authHeader.split("Bearer ")[1];
-            final String userEmail = jwtService.extractUsername(jwt);
+            final String token = authHeader.split("Bearer ")[1];
+            final String userEmail = jwtService.extractUsername(token);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (userEmail != null && authentication == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                    SecurityContextHolder.clearContext();
+                    throw new Exception();
+                } else if (jwtService.isTokenValid(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -59,12 +65,13 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-            UserDetails userDetails =
-                    (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            String jsonResponse = "{\"message\":\"Unauthenticated\"}";
+            response.getWriter().write(jsonResponse);
             handlerExceptionResolver.resolveException(request, response, null, exception);
         }
     }

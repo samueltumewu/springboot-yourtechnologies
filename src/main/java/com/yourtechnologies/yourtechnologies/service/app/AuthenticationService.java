@@ -1,4 +1,4 @@
-package com.yourtechnologies.yourtechnologies.service.jwt.app;
+package com.yourtechnologies.yourtechnologies.service.app;
 
 import com.yourtechnologies.yourtechnologies.dto.request.UserLoginRequestDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.UserLoginResponseDTO;
