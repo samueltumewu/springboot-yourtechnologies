@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface FormRepository extends JpaRepository<Form, Long> {
-
+    Boolean existsBySlug(String slug);
 }

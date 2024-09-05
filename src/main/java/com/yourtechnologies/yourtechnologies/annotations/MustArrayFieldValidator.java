@@ -8,7 +8,6 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 
 public class MustArrayFieldValidator implements ConstraintValidator<MustArrayField, List<String>> {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public boolean isValid(List<String> value, ConstraintValidatorContext context) {

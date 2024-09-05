@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.yourtechnologies.yourtechnologies.annotations.AlphanumericDotDash;
 import com.yourtechnologies.yourtechnologies.annotations.MustArrayField;
+import com.yourtechnologies.yourtechnologies.annotations.UniqueSlug;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ public class FormDTO {
     @NotNull
     @NotBlank
     @AlphanumericDotDash
+    @UniqueSlug
     private String slug;
     @NotNull
     @MustArrayField
