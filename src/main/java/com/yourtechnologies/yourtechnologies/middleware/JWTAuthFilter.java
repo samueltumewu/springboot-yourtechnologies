@@ -2,6 +2,7 @@ package com.yourtechnologies.yourtechnologies.middleware;
 
 import com.yourtechnologies.yourtechnologies.service.jwt.JwtService;
 import com.yourtechnologies.yourtechnologies.service.jwt.TokenBlacklistService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,7 +55,7 @@ public class JWTAuthFilter extends OncePerRequestFilter {
 
                 if (tokenBlacklistService.isTokenBlacklisted(token)) {
                     SecurityContextHolder.clearContext();
-                    throw new Exception();
+                    throw new ExpiredJwtException(null, null, "token has been blacklisted");
                 } else if (jwtService.isTokenValid(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,

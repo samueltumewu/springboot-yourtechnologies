@@ -20,7 +20,7 @@ public class FormController {
             @RequestHeader(value = "Authorization") String authorizationHeader,
             @Valid @RequestBody FormDTO formDTO
     ) {
-        String token = authorizationHeader.split("Bearer ")[1].trim();
+        String token = authorizationHeader.split("Bearer ")[1];
         FormResponseDTO returnBody = formService.createForm(formDTO, token);
         return ResponseEntity.ok(returnBody);
     }
@@ -29,7 +29,7 @@ public class FormController {
     public ResponseEntity<FormListResponseDTO> getFormByCreatorId(
             @RequestHeader(value = "Authorization") String authorizationHeader
     ) {
-        String token = authorizationHeader.split("Bearer ")[1].trim();
+        String token = authorizationHeader.split("Bearer ")[1];
         FormListResponseDTO returnBody = formService.getForm(token);
         return ResponseEntity.ok(returnBody);
     }

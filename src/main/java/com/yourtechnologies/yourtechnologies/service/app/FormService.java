@@ -30,7 +30,9 @@ public class FormService {
         FormResponseDTO formResponseDTO = new FormResponseDTO("");
 
         // retrieve user id based on token username
-        Long userId = retrieveUserByToken(jwtService.extractUsername(token)).getId();
+        User user = userRepository.findByEmail(jwtService.extractUsername(token))
+                .orElseThrow();
+        Long userId = user.getId();
 
         //read dto value as a class
         Form form = Form.builder()
@@ -51,7 +53,9 @@ public class FormService {
         FormListResponseDTO response = new FormListResponseDTO("");
 
         // retrieve user id based on token username
-        Long userId = retrieveUserByToken(jwtService.extractUsername(token)).getId();
+        User user = userRepository.findByEmail(jwtService.extractUsername(token))
+                .orElseThrow();
+        Long userId = user.getId();
 
         //get all forms
         List<Form> formList = formRepository.findByCreatorId(userId);
