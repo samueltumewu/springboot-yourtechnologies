@@ -2,6 +2,7 @@ package com.yourtechnologies.yourtechnologies.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.BaseResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
@@ -45,6 +46,16 @@ public class FormController {
             @PathVariable String formSlug
     ) throws Exception {
         QuestionResponseDTO returnBody = formService.addQuestion(jsonString, formSlug);
+        return ResponseEntity.ok(returnBody);
+    }
+
+    @DeleteMapping("/{formSlug}/questions/{questionId}")
+    public ResponseEntity<BaseResponseDTO> deleteQuestion(
+            @RequestHeader(value = "Authorization") String authorizationHeader,
+            @PathVariable String formSlug,
+            @PathVariable Long questionId
+    ) {
+        BaseResponseDTO returnBody = formService.removeQuestion(formSlug, questionId);
         return ResponseEntity.ok(returnBody);
     }
 }

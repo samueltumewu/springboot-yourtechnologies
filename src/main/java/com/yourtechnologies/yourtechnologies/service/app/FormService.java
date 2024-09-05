@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
 import com.yourtechnologies.yourtechnologies.dto.QuestionDTO;
 import com.yourtechnologies.yourtechnologies.dto.QuestionWithChoicesDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.BaseResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
@@ -21,6 +22,7 @@ import com.yourtechnologies.yourtechnologies.util.UtilGeneral;
 import jakarta.transaction.Transactional;
 import jakarta.validation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -86,7 +88,7 @@ public class FormService {
         if (form == null) {
             Map<String, String> errorDetails = new HashMap<>();
             errorDetails.put("form_slug(pathVariable)", "not found!");
-            throw new YourTechnologiesCustomException("Validation failed", errorDetails);
+            throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.NOT_FOUND);
         }
         JsonNode jsonNode = objectMapper.readTree(jsonString);
 
@@ -131,7 +133,7 @@ public class FormService {
                         ",'short answer'" +
                         ",'paragraph'" +
                         ",'date']");
-            throw new YourTechnologiesCustomException("Validation failed", errorDetails);
+            throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.BAD_REQUEST);
         }
 
         QuestionResponseDTO response = new QuestionResponseDTO("");
@@ -157,5 +159,22 @@ public class FormService {
         }
 
         return response;
+    }
+
+    @Transactional
+    public BaseResponseDTO removeQuestion(String formSlug, Long questionId) {
+        String messageResponse = "unknown";
+        //check form existence
+        Form form = formRepository.findBySlug(formSlug);
+        if (form == null) {
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("form_slug(pathVariable)", "not found!");
+            throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.NOT_FOUND);
+        }
+        //delete by questionId
+        questionRepository.deleteByIdAndByFormId(questionId, form.getId());
+
+        //return response
+        return new BaseResponseDTO(messageResponse);
     }
 }

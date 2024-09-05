@@ -66,12 +66,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(YourTechnologiesCustomException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponseDTO> handleYourTechnologiesCustomException(YourTechnologiesCustomException ex) {
         Map<String, String> errors = new HashMap<>();
         errors = ex.getDetails();
-        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO("Invalid field");
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(ex.getMessage());
         errorResponseDTO.setErrors(errors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDTO);
+        return ResponseEntity.status(ex.getHttpStatus()).body(errorResponseDTO);
     }
 }
