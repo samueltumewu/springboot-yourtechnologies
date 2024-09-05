@@ -1,20 +1,29 @@
 package com.yourtechnologies.yourtechnologies.service.app;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
+import com.yourtechnologies.yourtechnologies.dto.QuestionDTO;
+import com.yourtechnologies.yourtechnologies.dto.QuestionWithChoicesDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
 import com.yourtechnologies.yourtechnologies.entity.User;
 import com.yourtechnologies.yourtechnologies.entity.Form;
-import com.yourtechnologies.yourtechnologies.middleware.JWTAuthFilter;
 import com.yourtechnologies.yourtechnologies.repository.FormRepository;
 import com.yourtechnologies.yourtechnologies.repository.UserRepository;
 import com.yourtechnologies.yourtechnologies.service.jwt.JwtService;
+import com.yourtechnologies.yourtechnologies.util.UtilGeneral;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class FormService {
@@ -24,6 +33,8 @@ public class FormService {
     UserRepository userRepository;
     @Autowired
     FormRepository formRepository;
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Transactional
     public FormResponseDTO createForm(FormDTO formDTO, String token) {
@@ -65,8 +76,32 @@ public class FormService {
         return response;
     }
 
-    private User retrieveUserByToken(String token) {
-        return userRepository.findByEmail(jwtService.extractUsername(token))
-                .orElseThrow();
+    public FormListResponseDTO addQuestion(String jsonString) throws JsonProcessingException {
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+        QuestionDTO questionDTO = null;
+        QuestionWithChoicesDTO questionWithChoicesDTO = null;
+
+        Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+
+
+        boolean[] fieldBooleans = UtilGeneral.checkJsonChoicesAndChoiceType(fields);
+        boolean mustHaveChoices = fieldBooleans[0];
+        boolean choicesExist = fieldBooleans[1];
+        boolean isChoiceTypeCorrect = fieldBooleans[2];
+
+        if (isChoiceTypeCorrect && !mustHaveChoices) {
+            questionDTO = objectMapper.readValue(jsonString, QuestionDTO.class);
+            System.out.println(questionDTO.getChoiceType()
+                    + " " + questionDTO.getName());
+        } else if (choicesExist && isChoiceTypeCorrect) {
+            questionWithChoicesDTO = objectMapper.readValue(jsonString, QuestionWithChoicesDTO.class);
+            System.out.println(questionWithChoicesDTO.getChoiceType()
+                    + " " + questionWithChoicesDTO.getChoices());
+        } else {
+            System.out.println("tidak diijinkan");
+        }
+
+        return null;
     }
 }
