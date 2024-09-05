@@ -1,7 +1,10 @@
 package com.yourtechnologies.yourtechnologies.exceptionshandler;
 
 import com.yourtechnologies.yourtechnologies.dto.response.BaseResponseDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.ErrorResponseDTO;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @ControllerAdvice
@@ -36,13 +40,38 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponseDTO> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO("Invalid field");
+        errorResponseDTO.setErrors(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDTO);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponseDTO> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        Set<ConstraintViolation<?>> violations = ex.getConstraintViolations();
+        for (ConstraintViolation<?> violation : violations) {
+            errors.put(violation.getPropertyPath().toString(), violation.getMessage());
+        }
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO("Invalid field");
+        errorResponseDTO.setErrors(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDTO);
+    }
+
+    @ExceptionHandler(YourTechnologiesCustomException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponseDTO> handleYourTechnologiesCustomException(YourTechnologiesCustomException ex) {
+        Map<String, String> errors = new HashMap<>();
+        errors = ex.getDetails();
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO("Invalid field");
+        errorResponseDTO.setErrors(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDTO);
     }
 }

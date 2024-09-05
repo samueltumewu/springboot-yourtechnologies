@@ -14,6 +14,5 @@ import java.util.List;
 @Getter @Setter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class QuestionWithChoicesDTO extends QuestionDTO{
-    @NotNull @NotBlank
     private List<String> choices;
 }

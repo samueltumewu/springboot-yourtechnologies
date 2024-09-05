@@ -8,20 +8,22 @@ import com.yourtechnologies.yourtechnologies.dto.QuestionDTO;
 import com.yourtechnologies.yourtechnologies.dto.QuestionWithChoicesDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
+import com.yourtechnologies.yourtechnologies.entity.Question;
 import com.yourtechnologies.yourtechnologies.entity.User;
 import com.yourtechnologies.yourtechnologies.entity.Form;
+import com.yourtechnologies.yourtechnologies.exceptionshandler.YourTechnologiesCustomException;
 import com.yourtechnologies.yourtechnologies.repository.FormRepository;
+import com.yourtechnologies.yourtechnologies.repository.QuestionRepository;
 import com.yourtechnologies.yourtechnologies.repository.UserRepository;
 import com.yourtechnologies.yourtechnologies.service.jwt.JwtService;
 import com.yourtechnologies.yourtechnologies.util.UtilGeneral;
+import jakarta.transaction.Transactional;
+import jakarta.validation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,6 +35,8 @@ public class FormService {
     UserRepository userRepository;
     @Autowired
     FormRepository formRepository;
+    @Autowired
+    QuestionRepository questionRepository;
     @Autowired
     ObjectMapper objectMapper;
 
@@ -76,7 +80,14 @@ public class FormService {
         return response;
     }
 
-    public FormListResponseDTO addQuestion(String jsonString) throws JsonProcessingException {
+    @Transactional
+    public QuestionResponseDTO addQuestion(String jsonString, String formSlug) throws Exception {
+        Form form = formRepository.findBySlug(formSlug);
+        if (form == null) {
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("form_slug(pathVariable)", "not found!");
+            throw new YourTechnologiesCustomException("Validation failed", errorDetails);
+        }
         JsonNode jsonNode = objectMapper.readTree(jsonString);
 
         QuestionDTO questionDTO = null;
@@ -89,19 +100,62 @@ public class FormService {
         boolean mustHaveChoices = fieldBooleans[0];
         boolean choicesExist = fieldBooleans[1];
         boolean isChoiceTypeCorrect = fieldBooleans[2];
-
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        Validator validator = factory.getValidator();
+        Map<String, String> errorDetails = new HashMap<>();
         if (isChoiceTypeCorrect && !mustHaveChoices) {
             questionDTO = objectMapper.readValue(jsonString, QuestionDTO.class);
             System.out.println(questionDTO.getChoiceType()
                     + " " + questionDTO.getName());
+
+            Set<ConstraintViolation<QuestionDTO>> violations = validator.validate(questionDTO);
+            if (!violations.isEmpty()) {
+                throw new ConstraintViolationException(violations);
+            }
         } else if (choicesExist && isChoiceTypeCorrect) {
             questionWithChoicesDTO = objectMapper.readValue(jsonString, QuestionWithChoicesDTO.class);
             System.out.println(questionWithChoicesDTO.getChoiceType()
                     + " " + questionWithChoicesDTO.getChoices());
+
+            Set<ConstraintViolation<QuestionWithChoicesDTO>> violations = validator.validate(questionWithChoicesDTO);
+            if (!violations.isEmpty()) {
+                throw new ConstraintViolationException(violations);
+            }
         } else {
-            System.out.println("tidak diijinkan");
+            if (mustHaveChoices && !choicesExist)
+                errorDetails.put("choices", "Required in array of string");
+            if (!isChoiceTypeCorrect)
+                errorDetails.put("choice_type", "Required with values['multiple choice'" +
+                        ",'dropdown'" +
+                        ",'checkboxes'" +
+                        ",'short answer'" +
+                        ",'paragraph'" +
+                        ",'date']");
+            throw new YourTechnologiesCustomException("Validation failed", errorDetails);
         }
 
-        return null;
+        QuestionResponseDTO response = new QuestionResponseDTO("");
+        if (questionDTO != null) {
+            Question questionInsert = Question.builder()
+                    .name(questionDTO.getName())
+                    .choiceType(questionDTO.getChoiceType())
+                    .isRequired(questionDTO.getIsRequired()?1:0)
+                    .form(form)
+                    .build();
+            Question question = questionRepository.save(questionInsert);
+            response.setQuestion(question);
+        } else if (questionWithChoicesDTO != null) {
+            Question questionInsert = Question.builder()
+                    .name(questionWithChoicesDTO.getName())
+                    .choiceType(questionWithChoicesDTO.getChoiceType())
+                    .isRequired(questionWithChoicesDTO.getIsRequired()?1:0)
+                    .form(form)
+                    .build();
+            questionInsert.setChoicesListToString(questionWithChoicesDTO.getChoices());
+            Question question = questionRepository.save(questionInsert);
+            response.setQuestion(question);
+        }
+
+        return response;
     }
 }

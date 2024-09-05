@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
 import com.yourtechnologies.yourtechnologies.service.app.FormService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,11 +39,12 @@ public class FormController {
     }
 
     @PostMapping("/{formSlug}/questions")
-    public ResponseEntity<FormListResponseDTO> addQuestion(
+    public ResponseEntity<QuestionResponseDTO> addQuestion(
             @RequestHeader(value = "Authorization") String authorizationHeader,
-            @RequestBody String jsonString
-    ) throws JsonProcessingException {
-        FormListResponseDTO returnBody = formService.addQuestion(jsonString);
+            @RequestBody String jsonString,
+            @PathVariable String formSlug
+    ) throws Exception {
+        QuestionResponseDTO returnBody = formService.addQuestion(jsonString, formSlug);
         return ResponseEntity.ok(returnBody);
     }
 }
