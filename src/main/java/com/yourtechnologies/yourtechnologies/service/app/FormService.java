@@ -206,19 +206,30 @@ public class FormService {
     }
 
     @Transactional
-    public BaseResponseDTO removeQuestion(String formSlug, Long questionId) {
-        String messageResponse = "unknown";
+    public BaseResponseDTO removeQuestion(String formSlug, Long questionId, String token) {
+
         //check form existence
-        Form form = formRepository.findBySlug(formSlug);
+        User user = userRepository.findByEmail(jwtService.extractUsername(token))
+                .orElseThrow();
+        Long userId = user.getId();
+        Form form = formRepository.findBySlugAndCreatorId(formSlug, userId);
         if (form == null) {
             Map<String, String> errorDetails = new HashMap<>();
-            errorDetails.put("form_slug(pathVariable)", "not found!");
-            throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.NOT_FOUND);
+            errorDetails.put("form_slug", formSlug);
+            errorDetails.put("user",user.getName());
+            throw new YourTechnologiesCustomException("Form not found!", errorDetails, HttpStatus.NOT_FOUND);
         }
+
         //delete by questionId
+        if (questionRepository.findByFormIdAndId(form.getId(), questionId).isEmpty()) {
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("form_slug", formSlug);
+            errorDetails.put("user",user.getName());
+            throw new YourTechnologiesCustomException("Question not found!", errorDetails, HttpStatus.NOT_FOUND);
+        }
         questionRepository.deleteByIdAndFormId(questionId, form.getId());
 
         //return response
-        return new BaseResponseDTO(messageResponse);
+        return new BaseResponseDTO("Remove question success");
     }
 }

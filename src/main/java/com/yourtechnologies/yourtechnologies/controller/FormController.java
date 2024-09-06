@@ -59,10 +59,12 @@ public class FormController {
 
     @DeleteMapping("/{formSlug}/questions/{questionId}")
     public ResponseEntity<BaseResponseDTO> deleteQuestion(
+            @RequestHeader(value = "Authorization") String authorizationHeader,
             @PathVariable String formSlug,
             @PathVariable Long questionId
     ) {
-        BaseResponseDTO returnBody = formService.removeQuestion(formSlug, questionId);
+        String token = authorizationHeader.split("Bearer ")[1];
+        BaseResponseDTO returnBody = formService.removeQuestion(formSlug, questionId, token);
         return ResponseEntity.ok(returnBody);
     }
 }

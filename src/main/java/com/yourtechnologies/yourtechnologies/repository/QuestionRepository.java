@@ -10,4 +10,5 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     void deleteByIdAndFormId(Long id, Long formId);
     List<Question> findByFormId(Long formId);
+    List<Question> findByFormIdAndId(Long formId, Long id);
 }
