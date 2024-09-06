@@ -2,8 +2,10 @@ package com.yourtechnologies.yourtechnologies.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
+import com.yourtechnologies.yourtechnologies.dto.request.AnswerReqDTO;
 import com.yourtechnologies.yourtechnologies.dto.response.*;
 import com.yourtechnologies.yourtechnologies.service.app.FormService;
+import com.yourtechnologies.yourtechnologies.service.app.ResponseService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import java.util.Map;
 public class FormController {
     @Autowired
     FormService formService;
+    @Autowired
+    ResponseService responseService;
 
     @PostMapping("")
     public ResponseEntity<FormResponseDTO> createForm(
@@ -66,5 +70,16 @@ public class FormController {
         String token = authorizationHeader.split("Bearer ")[1];
         BaseResponseDTO returnBody = formService.removeQuestion(formSlug, questionId, token);
         return ResponseEntity.ok(returnBody);
+    }
+
+    @PostMapping("/{formSlug}/responses")
+    public ResponseEntity<BaseResponseDTO> addResponses(
+            @RequestHeader(value = "Authorization") String authorizationHeader,
+            @RequestBody AnswerReqDTO answerReqDto,
+            @PathVariable String formSlug
+    ) throws Exception {
+        String token = authorizationHeader.split("Bearer ")[1];
+        responseService.addResponse(token, formSlug, answerReqDto);
+        return ResponseEntity.ok(new BaseResponseDTO("ok"));
     }
 }
