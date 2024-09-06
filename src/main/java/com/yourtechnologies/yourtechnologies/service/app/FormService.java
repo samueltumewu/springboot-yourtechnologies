@@ -25,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class FormService {
@@ -43,7 +42,7 @@ public class FormService {
     ModelMapper modelMapper;
 
     @Transactional
-    public FormResponseDTO createForm(FormDTO formDTO, String token) {
+    public FormResponseDTO createForm(FormDTO formDTO, String token) throws JsonProcessingException {
         FormResponseDTO formResponseDTO = new FormResponseDTO("");
 
         // retrieve user id based on token username
@@ -58,10 +57,12 @@ public class FormService {
                 .description(formDTO.getDescription())
                 .limitOneResponse(formDTO.getLimitOneResponse()?1:0)
                 .creatorId(userId).build();
-
+        form.setAllowDomainListToString(formDTO.getAllowedDomains());
         Form saveForm = formRepository.save(form);
 
-        formResponseDTO.setForm(saveForm);
+        FormDTO formDtoMapped = modelMapper.map(saveForm, FormDTO.class);
+        formDtoMapped.setAllowedDomains(formDTO.getAllowedDomains());
+        formResponseDTO.setForm(formDtoMapped);
         formResponseDTO.setMessage("Create form success");
         return formResponseDTO;
     }
@@ -76,9 +77,20 @@ public class FormService {
 
         //get all forms
         List<Form> formList = formRepository.findByCreatorId(userId);
+        List<FormDTO> formDTOList = formList.stream()
+                .map(formStream -> {
+                    FormDTO formDto = modelMapper.map(formStream, FormDTO.class);
+                    try {
+                        formDto.setAllowedDomains(formStream.getAllowDomainStringToList());
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return formDto;
+                })
+                .toList();
 
         response.setMessage(!formList.isEmpty() ? "Get all forms success" : "forms not found");
-        response.setForms(formList);
+        response.setForms(formDTOList);
         return response;
     }
 

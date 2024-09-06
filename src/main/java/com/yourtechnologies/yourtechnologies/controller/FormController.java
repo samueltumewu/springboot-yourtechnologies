@@ -21,7 +21,7 @@ public class FormController {
     public ResponseEntity<FormResponseDTO> createForm(
             @RequestHeader(value = "Authorization") String authorizationHeader,
             @Valid @RequestBody FormDTO formDTO
-    ) {
+    ) throws JsonProcessingException {
         String token = authorizationHeader.split("Bearer ")[1];
         FormResponseDTO returnBody = formService.createForm(formDTO, token);
         return ResponseEntity.ok(returnBody);

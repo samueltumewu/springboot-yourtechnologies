@@ -33,8 +33,8 @@ public class Question {
 
     @ManyToOne
     @JoinColumn(
-            name = "form_id", // specifies the name of the foreign key column in the database
-            referencedColumnName = "id" // primary key of the user who owns this MESSAGE
+            name = "form_id",
+            referencedColumnName = "id"
     )
     private Form form;
 

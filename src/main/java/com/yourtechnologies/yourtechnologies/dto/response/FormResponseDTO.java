@@ -13,7 +13,7 @@ import lombok.Setter;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FormResponseDTO extends BaseResponseDTO {
 
-    private Form form;
+    private FormDTO form;
     public FormResponseDTO(String message) {
         super(message);
     }
