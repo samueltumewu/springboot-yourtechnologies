@@ -46,3 +46,10 @@ create table answers  (
     foreign key (response_id) references responses(id),
     foreign key (question_id) references form_questions(id)
 );
+
+insert into user_information (name, email, password)
+	values ('User 1', 'user1@webtech.id', '$2a$10$zRPK4YrCp2w1VNUK0gjz5.Zezaab5Rr/qqLjT1A8jJ0JsIbHdoq1K');
+insert into user_information (name, email, password)
+	values ('User 2', 'user2@webtech.id', '$2a$10$5feiHLIoxtW0uyOU9Plx0eJzhJ0KVJUatoRaFZYmuRfQHauvLS5P6');
+insert into user_information (name, email, password)
+	values ('User 3', 'user3@worldskills.org', '$2a$10$d.YCWcyJRFvZAmubrlNTieaVMD.bYF5oYFkXt7fO.N.pdJpsDi6RO');
