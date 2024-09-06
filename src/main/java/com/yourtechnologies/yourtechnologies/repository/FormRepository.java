@@ -13,4 +13,5 @@ public interface FormRepository extends JpaRepository<Form, Long> {
     Boolean existsBySlug(String slug);
     List<Form> findByCreatorId(Long userId);
     Form findBySlug(String slug);
+    Form findBySlugAndCreatorId(String slug, Long userId);
 }

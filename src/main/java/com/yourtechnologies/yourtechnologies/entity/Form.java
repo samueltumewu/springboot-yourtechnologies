@@ -3,6 +3,8 @@ package com.yourtechnologies.yourtechnologies.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "forms")
 @Builder

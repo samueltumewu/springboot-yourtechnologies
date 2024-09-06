@@ -42,12 +42,19 @@ public class Question {
         this.choices = choicesListToString(choices);
     }
 
+    public List<String> getChoicesStringToList() throws JsonProcessingException {
+        return choicesStringToList(this.choices);
+    }
+
     private String choicesListToString(List<String> list) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(list);
     }
 
     private List<String> choicesStringToList(String listField) throws JsonProcessingException {
+        if (listField == null || listField.equalsIgnoreCase("")) {
+            return new ArrayList<>();
+        }
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(listField, TypeFactory.defaultInstance().constructCollectionType(ArrayList.class, String.class));
     }

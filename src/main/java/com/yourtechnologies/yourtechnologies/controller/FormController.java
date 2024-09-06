@@ -2,10 +2,7 @@ package com.yourtechnologies.yourtechnologies.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.BaseResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.*;
 import com.yourtechnologies.yourtechnologies.service.app.FormService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,19 +36,29 @@ public class FormController {
         return ResponseEntity.ok(returnBody);
     }
 
+    @GetMapping("/{formSlug}")
+    public ResponseEntity<FormDetailResponseDTO> getDetailForms(
+            @RequestHeader(value = "Authorization") String authorizationHeader,
+            @PathVariable String formSlug
+    ) {
+        String token = authorizationHeader.split("Bearer ")[1];
+        FormDetailResponseDTO returnBody = formService.getFormDetail(token, formSlug);
+        return ResponseEntity.ok(returnBody);
+    }
+
     @PostMapping("/{formSlug}/questions")
     public ResponseEntity<QuestionResponseDTO> addQuestion(
             @RequestHeader(value = "Authorization") String authorizationHeader,
             @RequestBody String jsonString,
             @PathVariable String formSlug
     ) throws Exception {
-        QuestionResponseDTO returnBody = formService.addQuestion(jsonString, formSlug);
+        String token = authorizationHeader.split("Bearer ")[1];
+        QuestionResponseDTO returnBody = formService.addQuestion(jsonString, formSlug, token);
         return ResponseEntity.ok(returnBody);
     }
 
     @DeleteMapping("/{formSlug}/questions/{questionId}")
     public ResponseEntity<BaseResponseDTO> deleteQuestion(
-            @RequestHeader(value = "Authorization") String authorizationHeader,
             @PathVariable String formSlug,
             @PathVariable Long questionId
     ) {

@@ -4,15 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourtechnologies.yourtechnologies.dto.FormDTO;
+import com.yourtechnologies.yourtechnologies.dto.FormDetailDTO;
 import com.yourtechnologies.yourtechnologies.dto.QuestionDTO;
 import com.yourtechnologies.yourtechnologies.dto.QuestionWithChoicesDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.BaseResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.FormListResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.FormResponseDTO;
-import com.yourtechnologies.yourtechnologies.dto.response.QuestionResponseDTO;
+import com.yourtechnologies.yourtechnologies.dto.response.*;
+import com.yourtechnologies.yourtechnologies.entity.Form;
 import com.yourtechnologies.yourtechnologies.entity.Question;
 import com.yourtechnologies.yourtechnologies.entity.User;
-import com.yourtechnologies.yourtechnologies.entity.Form;
 import com.yourtechnologies.yourtechnologies.exceptionshandler.YourTechnologiesCustomException;
 import com.yourtechnologies.yourtechnologies.repository.FormRepository;
 import com.yourtechnologies.yourtechnologies.repository.QuestionRepository;
@@ -21,13 +19,13 @@ import com.yourtechnologies.yourtechnologies.service.jwt.JwtService;
 import com.yourtechnologies.yourtechnologies.util.UtilGeneral;
 import jakarta.transaction.Transactional;
 import jakarta.validation.*;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Service
 public class FormService {
@@ -41,6 +39,8 @@ public class FormService {
     QuestionRepository questionRepository;
     @Autowired
     ObjectMapper objectMapper;
+    @Autowired
+    ModelMapper modelMapper;
 
     @Transactional
     public FormResponseDTO createForm(FormDTO formDTO, String token) {
@@ -82,13 +82,57 @@ public class FormService {
         return response;
     }
 
-    @Transactional
-    public QuestionResponseDTO addQuestion(String jsonString, String formSlug) throws Exception {
-        Form form = formRepository.findBySlug(formSlug);
+    public FormDetailResponseDTO getFormDetail(String token, String formSlug) {
+        // retrieve user id based on token username
+        User user = userRepository.findByEmail(jwtService.extractUsername(token))
+                .orElseThrow();
+        Long userId = user.getId();
+
+        //get all forms
+        Form form = formRepository.findBySlugAndCreatorId(formSlug, userId);
         if (form == null) {
             Map<String, String> errorDetails = new HashMap<>();
-            errorDetails.put("form_slug(pathVariable)", "not found!");
-            throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.NOT_FOUND);
+            errorDetails.put("form_slug", formSlug);
+            errorDetails.put("user",user.getName());
+            throw new YourTechnologiesCustomException("Form not found!", errorDetails, HttpStatus.NOT_FOUND);
+        }
+
+        //map to DTO
+        FormDetailDTO formDetailDTO = modelMapper.map(form, FormDetailDTO.class);
+        List<Question> questionList = questionRepository.findByFormId(form.getId());
+        List<QuestionWithChoicesDTO> questionWithChoicesDTO = questionList.stream()
+                .map(q -> {
+                            QuestionWithChoicesDTO qDto = modelMapper.map(q, QuestionWithChoicesDTO.class);
+                            try {
+                                qDto.setChoices(q.getChoicesStringToList());
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                            return qDto;
+                        }
+                )
+                .toList();
+
+        formDetailDTO.setQuestions(questionWithChoicesDTO);
+
+        FormDetailResponseDTO response = new FormDetailResponseDTO("Get form success");
+        response.setForm(formDetailDTO);
+        return response;
+    }
+
+    @Transactional
+    public QuestionResponseDTO addQuestion(String jsonString, String formSlug, String token) throws Exception {
+        // retrieve user id based on token username
+        User user = userRepository.findByEmail(jwtService.extractUsername(token))
+                .orElseThrow();
+        Long userId = user.getId();
+
+        Form form = formRepository.findBySlugAndCreatorId(formSlug, userId);
+        if (form == null) {
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("form_slug", formSlug);
+            errorDetails.put("user",user.getName());
+            throw new YourTechnologiesCustomException("Form not found!", errorDetails, HttpStatus.NOT_FOUND);
         }
         JsonNode jsonNode = objectMapper.readTree(jsonString);
 
@@ -172,7 +216,7 @@ public class FormService {
             throw new YourTechnologiesCustomException("Validation failed", errorDetails, HttpStatus.NOT_FOUND);
         }
         //delete by questionId
-        questionRepository.deleteByIdAndByFormId(questionId, form.getId());
+        questionRepository.deleteByIdAndFormId(questionId, form.getId());
 
         //return response
         return new BaseResponseDTO(messageResponse);
